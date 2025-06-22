@@ -195,4 +195,4 @@ O banco de dados relacional utilizado é o PostgreSQL, com tabelas criadas autom
 
 Este backend se integra a uma aplicação JavaFX feita para funcionar localmente em zonas rurais com baixa ou nenhuma conectividade.
 
-🔗 Repositório do Frontend Agrotask: [github.com/jhonzito66/frontend](https://github.com/jhonzito66/frontend)
+🔗 Repositório do Frontend Agrotask: [frontend](https://github.com/jhonzito66/frontend)
