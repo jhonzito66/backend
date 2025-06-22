@@ -3,30 +3,31 @@ package com.example.backend.dto;
 import com.example.backend.model.StatusTarefa;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor; // Adicionado construtor padrão para flexibilidade
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List; // Import para List
+import java.util.List;
 
-// DTO para respostas de tarefas (retorno de informações ao frontend).
-@Data
-@NoArgsConstructor
-@AllArgsConstructor // Este construtor pode se tornar muito longo, mas o Lombok Data resolve Getters/Setters/ToString
+// DTO para resposta de tarefas (dados enviados ao frontend)
+@Data // Gera getters, setters, equals, hashCode e toString
+@NoArgsConstructor // Construtor vazio
+@AllArgsConstructor // Construtor com todos os campos
 public class TarefaResponse {
-    private Long id;
-    private String titulo;
-    private String descricao;
-    private StatusTarefa status;
-    private LocalDateTime dataCriacao;
-    private LocalDateTime dataLimite;
-    private Long atribuidorId;
-    private String atribuidorNome; // Nome do usuário que atribuiu
-    private Long atributarioId;
-    private String atributarioNome; // Nome do usuário para quem foi atribuída
-    private String observacaoFinalizacao; // Observação de finalização
-    private LocalDateTime dataConclusao; // Data de conclusão da tarefa
 
-    // NOVOS CAMPOS PARA INSUMOS E MAQUINÁRIOS ATRIBUÍDOS
-    private List<TarefaInsumoResponse> insumosAtribuidos;
-    private List<TarefaMaquinarioResponse> maquinariosAtribuidos;
+    private Long id;                       // ID da tarefa
+    private String titulo;                 // Título da tarefa
+    private String descricao;              // Descrição da tarefa
+    private StatusTarefa status;           // Status da tarefa (PENDENTE, EM_ANDAMENTO, CONCLUIDA)
+    private LocalDateTime dataCriacao;     // Data de criação da tarefa
+    private LocalDateTime dataLimite;      // Data limite para conclusão
+    private Long atribuidorId;             // ID do usuário que atribuiu a tarefa
+    private String atribuidorNome;         // Nome do usuário que atribuiu a tarefa
+    private Long atributarioId;            // ID do usuário que recebeu a tarefa
+    private String atributarioNome;        // Nome do usuário que recebeu a tarefa
+    private String observacaoFinalizacao; // Observações feitas na finalização da tarefa
+    private LocalDateTime dataConclusao;   // Data em que a tarefa foi concluída
+
+    // Listas de insumos e maquinários associados à tarefa
+    private List<TarefaInsumoResponse> insumosAtribuidos;         // Insumos usados na tarefa
+    private List<TarefaMaquinarioResponse> maquinariosAtribuidos; // Maquinários usados na tarefa
 }

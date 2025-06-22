@@ -5,35 +5,38 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List; // Import para List
+import java.util.List;
 
-// DTO para a requisição de finalização de tarefa, incluindo detalhes de insumo/maquinário.
+// DTO usado para finalizar uma tarefa, incluindo observações, insumos e maquinários envolvidos
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class TarefaFinalizacaoRequest {
-    private String observacao;
-    private List<InsumoEntregueRequest> insumosEntregues; // Lista de insumos entregues
-    private List<MaquinarioDevolvidoRequest> maquinariosDevolvidos; // Lista de maquinários devolvidos
 
-    // DTO aninhado para insumos entregues
+    private String observacao; // Observação final do usuário sobre a tarefa
+
+    private List<InsumoEntregueRequest> insumosEntregues; // Lista de insumos entregues na tarefa
+
+    private List<MaquinarioDevolvidoRequest> maquinariosDevolvidos; // Lista de maquinários devolvidos na tarefa
+
+    // Subclasse que representa um insumo entregue
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class InsumoEntregueRequest {
-        private Long tarefaInsumoId; // ID da entrada em tarefa_insumo
-        private Boolean entregue;
-        private LocalDateTime dataEntrega;
+        private Long tarefaInsumoId;      // ID do vínculo entre tarefa e insumo
+        private Boolean entregue;         // Indica se o insumo foi realmente entregue
+        private LocalDateTime dataEntrega; // Data/hora da entrega
     }
 
-    // DTO aninhado para maquinários devolvidos
+    // Subclasse que representa um maquinário devolvido
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MaquinarioDevolvidoRequest {
-        private Long tarefaMaquinarioId; // ID da entrada em tarefa_maquinario
-        private Boolean foiLavado;
-        private Boolean foiAbastecido;
-        private LocalDateTime dataDevolucao;
+        private Long tarefaMaquinarioId;   // ID do vínculo entre tarefa e maquinário
+        private Boolean foiLavado;         // Indica se o maquinário foi lavado
+        private Boolean foiAbastecido;     // Indica se o maquinário foi abastecido
+        private LocalDateTime dataDevolucao; // Data/hora da devolução
     }
 }

@@ -39,6 +39,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Serviço responsável por gerenciar operações relacionadas a Tarefas,
+ * incluindo sua criação, listagem, atualização de status e finalização,
+ * bem como a gestão de Insumos e Maquinários associados.
+ */
 @Service
 public class TarefaService {
 
@@ -49,6 +54,16 @@ public class TarefaService {
     private final TarefaInsumoRepository tarefaInsumoRepository;
     private final TarefaMaquinarioRepository tarefaMaquinarioRepository;
 
+    /**
+     * Construtor para injeção de dependências.
+     *
+     * @param tarefaRepository Repositório para acesso a dados de Tarefa.
+     * @param usuarioRepository Repositório para acesso a dados de Usuario.
+     * @param insumoRepository Repositório para acesso a dados de Insumo.
+     * @param maquinarioRepository Repositório para acesso a dados de Maquinario.
+     * @param tarefaInsumoRepository Repositório para acesso a dados de TarefaInsumo.
+     * @param tarefaMaquinarioRepository Repositório para acesso a dados de TarefaMaquinario.
+     */
     @Autowired
     public TarefaService(TarefaRepository tarefaRepository,
                          UsuarioRepository usuarioRepository,
@@ -64,6 +79,15 @@ public class TarefaService {
         this.tarefaMaquinarioRepository = tarefaMaquinarioRepository;
     }
 
+    /**
+     * Cria uma nova tarefa no sistema.
+     *
+     * @param request O DTO contendo os dados da nova tarefa.
+     * @return O DTO da tarefa criada.
+     * @throws ResponseStatusException se o atribuidor ou atributário não forem encontrados,
+     * ou se a tarefa for tentada ser atribuída a um tipo de usuário inválido,
+     * ou se a quantidade de insumo for insuficiente, ou se o maquinário não estiver disponível.
+     */
     @Transactional
     public TarefaResponse criarTarefa(TarefaRequest request) {
         Usuario atribuidor = usuarioRepository.findById(request.getAtribuidorId())
@@ -72,7 +96,6 @@ public class TarefaService {
         Usuario atributario = usuarioRepository.findById(request.getAtributarioId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Atributário não encontrado."));
 
-        // MODIFICAÇÃO AQUI: Permitir atribuir a COMUM ou MODERADOR
         if (!atributario.getTipoUsuario().equals(Usuario.TipoUsuario.COMUM) &&
                 !atributario.getTipoUsuario().equals(Usuario.TipoUsuario.MODERADOR)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "As tarefas só podem ser atribuídas a usuários do tipo COMUM ou MODERADOR.");
@@ -88,7 +111,6 @@ public class TarefaService {
 
         Tarefa savedTarefa = tarefaRepository.save(tarefa);
 
-        // Atribuir insumos à tarefa
         if (request.getInsumosAtribuidos() != null && !request.getInsumosAtribuidos().isEmpty()) {
             for (TarefaInsumoRequest insumoReq : request.getInsumosAtribuidos()) {
                 Insumo insumo = insumoRepository.findById(insumoReq.getInsumoId())
@@ -108,7 +130,6 @@ public class TarefaService {
             }
         }
 
-        // Atribuir maquinários à tarefa
         if (request.getMaquinariosAtribuidos() != null && !request.getMaquinariosAtribuidos().isEmpty()) {
             for (TarefaMaquinarioRequest maquinarioReq : request.getMaquinariosAtribuidos()) {
                 Maquinario maquinario = maquinarioRepository.findById(maquinarioReq.getMaquinarioId())
@@ -137,12 +158,24 @@ public class TarefaService {
         }
     }
 
+    /**
+     * Lista todas as tarefas presentes no sistema.
+     *
+     * @return Uma lista de DTOs de todas as tarefas.
+     */
     public List<TarefaResponse> listarTodasTarefas() {
         return tarefaRepository.findAll().stream()
                 .map(this::mapToTarefaResponse)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Lista as tarefas atribuídas a um usuário específico.
+     *
+     * @param atributarioId O ID do usuário atributário.
+     * @return Uma lista de DTOs das tarefas atribuídas ao usuário.
+     * @throws ResponseStatusException se o usuário atributário não for encontrado.
+     */
     public List<TarefaResponse> listarTarefasPorAtributario(Long atributarioId) {
         Usuario atributario = usuarioRepository.findById(atributarioId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário atributário não encontrado."));
@@ -152,6 +185,15 @@ public class TarefaService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Atualiza o status de uma tarefa.
+     * Se o novo status for CONCLUIDA, a data de conclusão é definida.
+     *
+     * @param tarefaId O ID da tarefa a ser atualizada.
+     * @param newStatus O novo status da tarefa.
+     * @return O DTO da tarefa atualizada.
+     * @throws ResponseStatusException se a tarefa não for encontrada.
+     */
     @Transactional
     public TarefaResponse atualizarStatusTarefa(Long tarefaId, StatusTarefa newStatus) {
         Tarefa tarefa = tarefaRepository.findById(tarefaId)
@@ -165,6 +207,19 @@ public class TarefaService {
         return mapToTarefaResponse(updatedTarefa);
     }
 
+    /**
+     * Finaliza uma tarefa, definindo seu status como CONCLUIDA,
+     * adicionando observações e registrando a entrega de insumos
+     * e a devolução de maquinários.
+     *
+     * @param tarefaId O ID da tarefa a ser finalizada.
+     * @param observacaoFinalizacao A observação final da tarefa.
+     * @param insumosEntregues Lista de insumos entregues com seus detalhes.
+     * @param maquinariosDevolvidos Lista de maquinários devolvidos com seus detalhes.
+     * @return O DTO da tarefa finalizada.
+     * @throws ResponseStatusException se a tarefa não for encontrada, já estiver concluída,
+     * ou se um item de insumo/maquinário da tarefa não for encontrado ou não pertencer à tarefa.
+     */
     @Transactional
     public TarefaResponse finalizarTarefa(Long tarefaId, String observacaoFinalizacao,
                                           List<TarefaFinalizacaoRequest.InsumoEntregueRequest> insumosEntregues,
@@ -223,25 +278,48 @@ public class TarefaService {
         return mapToTarefaResponse(finalizedTarefa);
     }
 
+    /**
+     * Verifica se um usuário é o atributário (responsável) de uma tarefa específica.
+     * Utilizado para validações de segurança.
+     *
+     * @param userId O ID do usuário.
+     * @param taskId O ID da tarefa.
+     * @return true se o usuário for o atributário da tarefa, false caso contrário.
+     */
     public boolean isTarefaOwner(Long userId, Long taskId) {
         return tarefaRepository.findById(taskId)
                 .map(tarefa -> tarefa.getAtributario().getId().equals(userId))
                 .orElse(false);
     }
 
+    /**
+     * Lista todas as tarefas que possuem o status CONCLUIDA.
+     *
+     * @return Uma lista de DTOs de tarefas concluídas.
+     */
     public List<TarefaResponse> listarTarefasConcluidas() {
         return tarefaRepository.findByStatus(StatusTarefa.CONCLUIDA).stream()
                 .map(this::mapToTarefaResponse)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Lista usuários que podem receber atribuição de tarefas (COMUM e MODERADOR).
+     *
+     * @return Uma lista de DTOs de usuários elegíveis para atribuição.
+     */
     public List<UsuarioResponseDTO> listarUsuariosAtribuiveis() {
         return usuarioRepository.findByTipoUsuarioIn(List.of(Usuario.TipoUsuario.COMUM, Usuario.TipoUsuario.MODERADOR)).stream()
                 .map(u -> new UsuarioResponseDTO(u.getId(), u.getNome(), u.getEmail(), u.getTipoUsuario()))
                 .collect(Collectors.toList());
     }
 
-    // --- Métodos de CRUD para Insumos (Adicionado para a nova funcionalidade) ---
+    /**
+     * Cria um novo insumo no inventário.
+     *
+     * @param request O DTO contendo os dados do novo insumo.
+     * @return O DTO do insumo criado.
+     */
     @Transactional
     public InsumoResponse criarInsumo(InsumoRequest request) {
         Insumo insumo = new Insumo();
@@ -254,18 +332,38 @@ public class TarefaService {
         return mapToInsumoResponse(savedInsumo);
     }
 
+    /**
+     * Lista todos os insumos presentes no inventário.
+     *
+     * @return Uma lista de DTOs de todos os insumos.
+     */
     public List<InsumoResponse> listarTodosInsumos() {
         return insumoRepository.findAll().stream()
                 .map(this::mapToInsumoResponse)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Busca um insumo pelo seu ID.
+     *
+     * @param id O ID do insumo a ser buscado.
+     * @return O DTO do insumo encontrado.
+     * @throws ResponseStatusException se o insumo não for encontrado.
+     */
     public InsumoResponse buscarInsumoPorId(Long id) {
         Insumo insumo = insumoRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Insumo não encontrado."));
         return mapToInsumoResponse(insumo);
     }
 
+    /**
+     * Atualiza os dados de um insumo existente.
+     *
+     * @param id O ID do insumo a ser atualizado.
+     * @param request O DTO com os dados atualizados do insumo.
+     * @return O DTO do insumo atualizado.
+     * @throws ResponseStatusException se o insumo não for encontrado.
+     */
     @Transactional
     public InsumoResponse atualizarInsumo(Long id, InsumoRequest request) {
         Insumo insumo = insumoRepository.findById(id)
@@ -279,6 +377,12 @@ public class TarefaService {
         return mapToInsumoResponse(updatedInsumo);
     }
 
+    /**
+     * Deleta um insumo do inventário pelo seu ID.
+     *
+     * @param id O ID do insumo a ser deletado.
+     * @throws ResponseStatusException se o insumo não for encontrado.
+     */
     public void deletarInsumo(Long id) {
         if (!insumoRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Insumo não encontrado para deletar.");
@@ -286,7 +390,12 @@ public class TarefaService {
         insumoRepository.deleteById(id);
     }
 
-    // --- Métodos de CRUD para Maquinarios (Adicionado para a nova funcionalidade) ---
+    /**
+     * Cria um novo maquinário no inventário.
+     *
+     * @param request O DTO contendo os dados do novo maquinário.
+     * @return O DTO do maquinário criado.
+     */
     @Transactional
     public MaquinarioResponse criarMaquinario(MaquinarioRequest request) {
         Maquinario maquinario = new Maquinario();
@@ -299,18 +408,38 @@ public class TarefaService {
         return mapToMaquinarioResponse(savedMaquinario);
     }
 
+    /**
+     * Lista todos os maquinários presentes no inventário.
+     *
+     * @return Uma lista de DTOs de todos os maquinários.
+     */
     public List<MaquinarioResponse> listarTodosMaquinarios() {
         return maquinarioRepository.findAll().stream()
                 .map(this::mapToMaquinarioResponse)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Busca um maquinário pelo seu ID.
+     *
+     * @param id O ID do maquinário a ser buscado.
+     * @return O DTO do maquinário encontrado.
+     * @throws ResponseStatusException se o maquinário não for encontrado.
+     */
     public MaquinarioResponse buscarMaquinarioPorId(Long id) {
         Maquinario maquinario = maquinarioRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Maquinário não encontrado."));
         return mapToMaquinarioResponse(maquinario);
     }
 
+    /**
+     * Atualiza os dados de um maquinário existente.
+     *
+     * @param id O ID do maquinário a ser atualizado.
+     * @param request O DTO com os dados atualizados do maquinário.
+     * @return O DTO do maquinário atualizado.
+     * @throws ResponseStatusException se o maquinário não for encontrado.
+     */
     @Transactional
     public MaquinarioResponse atualizarMaquinario(Long id, MaquinarioRequest request) {
         Maquinario maquinario = maquinarioRepository.findById(id)
@@ -324,6 +453,12 @@ public class TarefaService {
         return mapToMaquinarioResponse(updatedMaquinario);
     }
 
+    /**
+     * Deleta um maquinário do inventário pelo seu ID.
+     *
+     * @param id O ID do maquinário a ser deletado.
+     * @throws ResponseStatusException se o maquinário não for encontrado.
+     */
     public void deletarMaquinario(Long id) {
         if (!maquinarioRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Maquinário não encontrado para deletar.");
@@ -331,8 +466,12 @@ public class TarefaService {
         maquinarioRepository.deleteById(id);
     }
 
-    // --- Métodos Auxiliares de Mapeamento (DTOs) ---
-
+    /**
+     * Mapeia uma entidade Tarefa para seu DTO de resposta.
+     *
+     * @param tarefa A entidade Tarefa a ser mapeada.
+     * @return O DTO TarefaResponse correspondente.
+     */
     private TarefaResponse mapToTarefaResponse(Tarefa tarefa) {
         List<TarefaInsumoResponse> insumosResp = tarefa.getInsumosAtribuidos() != null ?
                 tarefa.getInsumosAtribuidos().stream()
@@ -377,6 +516,12 @@ public class TarefaService {
         );
     }
 
+    /**
+     * Mapeia uma entidade Insumo para seu DTO de resposta.
+     *
+     * @param insumo A entidade Insumo a ser mapeada.
+     * @return O DTO InsumoResponse correspondente.
+     */
     private InsumoResponse mapToInsumoResponse(Insumo insumo) {
         return new InsumoResponse(
                 insumo.getId(),
@@ -388,6 +533,12 @@ public class TarefaService {
         );
     }
 
+    /**
+     * Mapeia uma entidade Maquinario para seu DTO de resposta.
+     *
+     * @param maquinario A entidade Maquinario a ser mapeada.
+     * @return O DTO MaquinarioResponse correspondente.
+     */
     private MaquinarioResponse mapToMaquinarioResponse(Maquinario maquinario) {
         return new MaquinarioResponse(
                 maquinario.getId(),

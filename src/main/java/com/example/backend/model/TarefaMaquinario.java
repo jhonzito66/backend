@@ -15,30 +15,30 @@ import java.time.LocalDateTime;
 public class TarefaMaquinario {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // ID auto-incrementado
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY) // Relacionamento ManyToOne com Tarefa
+    @ManyToOne(fetch = FetchType.LAZY) // Relaciona com a tarefa
     @JoinColumn(name = "tarefa_id", nullable = false)
     private Tarefa tarefa;
 
-    @ManyToOne(fetch = FetchType.LAZY) // Relacionamento ManyToOne com Maquinario
+    @ManyToOne(fetch = FetchType.LAZY) // Relaciona com o maquinário
     @JoinColumn(name = "maquinario_id", nullable = false)
     private Maquinario maquinario;
 
     @Column
-    private Integer quantidade; // Quantidade de maquinário (se aplicável, ou 1 para item único)
+    private Integer quantidade; // Quantidade do maquinário (geralmente 1)
 
-    // Novos campos para a finalização por parte do usuário comum
-    @Column(name = "data_devolucao") // Data de devolução do maquinário
-    private LocalDateTime dataDevolucao;
+    @Column(name = "data_devolucao")
+    private LocalDateTime dataDevolucao; // Quando foi devolvido
 
-    @Column(name = "foi_lavado", nullable = false) // Se o maquinário foi lavado
-    private Boolean foiLavado = false;
+    @Column(name = "foi_lavado", nullable = false)
+    private Boolean foiLavado = false; // Se foi lavado
 
-    @Column(name = "foi_abastecido", nullable = false) // Se o maquinário foi abastecido
-    private Boolean foiAbastecido = false;
+    @Column(name = "foi_abastecido", nullable = false)
+    private Boolean foiAbastecido = false; // Se foi abastecido
 
+    // Garante que os booleanos não fiquem nulos
     @PrePersist
     @PreUpdate
     private void setDefaultValues() {

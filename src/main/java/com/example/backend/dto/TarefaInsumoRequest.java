@@ -5,13 +5,13 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
-// DTO para requisição de TarefaInsumo (usado para atribuir insumos a uma tarefa)
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+// DTO usado para associar um insumo a uma tarefa
+@Data // Gera getters, setters, equals, hashCode e toString
+@NoArgsConstructor // Construtor vazio
+@AllArgsConstructor // Construtor com todos os campos
 public class TarefaInsumoRequest {
-    private Long insumoId;
-    private BigDecimal quantidade; // MUDANÇA: BigDecimal
+
+    private Long insumoId;           // ID do insumo a ser associado à tarefa
+    private BigDecimal quantidade;  // Quantidade do insumo (permite valores decimais)
 }

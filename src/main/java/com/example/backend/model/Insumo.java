@@ -5,37 +5,36 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-import java.math.BigDecimal; // Import para BigDecimal
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "insumos")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Data // Gera getters, setters, equals, hashCode e toString
+@NoArgsConstructor // Construtor vazio
+@AllArgsConstructor // Construtor com todos os campos
 public class Insumo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long id;                    // Identificador único do insumo
 
     @Column(nullable = false)
-    private String nome;
+    private String nome;                // Nome do insumo
 
     @Column(columnDefinition = "TEXT")
-    private String descricao;
+    private String descricao;           // Descrição detalhada do insumo
 
     @Column(name = "unidade_medida", nullable = false)
-    private String unidadeMedida; // Ex: "KG", "LITRO", "UNIDADE"
+    private String unidadeMedida;       // Unidade de medida (ex: KG, LITRO, UNIDADE)
 
     @Column(nullable = false)
-    private BigDecimal quantidade; // MUDANÇA: Usamos BigDecimal para NUMERIC
+    private BigDecimal quantidade;      // Quantidade disponível do insumo
 
     @Column(name = "data_validade")
-    private LocalDate dataValidade; // Date no SQL mapeia para LocalDate
+    private LocalDate dataValidade;     // Data de validade do insumo
 
-    // Relacionamento OneToMany com TarefaInsumo
-    // FetchType.LAZY para evitar carregamento ansioso desnecessário
+    // Relação com tarefas que utilizam este insumo
     @OneToMany(mappedBy = "insumo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private java.util.List<TarefaInsumo> tarefasInsumos;
+    private java.util.List<TarefaInsumo> tarefasInsumos; // Lista de tarefas que usam este insumo
 }

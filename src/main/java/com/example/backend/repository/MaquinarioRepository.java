@@ -1,11 +1,13 @@
 package com.example.backend.repository;
 
 import com.example.backend.model.Maquinario;
-import com.example.backend.model.MaquinarioStatus; // Import para MaquinarioStatus
+import com.example.backend.model.MaquinarioStatus; // Import para o enum MaquinarioStatus
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
-// Repositório para a entidade Maquinario.
+// Repositório para gerenciar a entidade Maquinario no banco de dados
 public interface MaquinarioRepository extends JpaRepository<Maquinario, Long> {
-    List<Maquinario> findByStatus(MaquinarioStatus status); // Para filtrar por status
+
+    // Busca uma lista de Maquinarios filtrando pelo status
+    List<Maquinario> findByStatus(MaquinarioStatus status);
 }

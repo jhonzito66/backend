@@ -7,33 +7,32 @@ import lombok.AllArgsConstructor;
 
 @Entity
 @Table(name = "maquinarios")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Data // Gera getters, setters, equals, hashCode e toString
+@NoArgsConstructor // Construtor padrão
+@AllArgsConstructor // Construtor com todos os campos
 public class Maquinario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long id;                // Identificador único do maquinário
 
     @Column(nullable = false)
-    private String nome;
+    private String nome;            // Nome do maquinário
 
     @Column(columnDefinition = "TEXT")
-    private String descricao;
+    private String descricao;       // Descrição detalhada do maquinário
 
-    @Enumerated(EnumType.STRING) // Armazena o enum como String
+    @Enumerated(EnumType.STRING) // Salva enum como string no banco
     @Column(nullable = false, name = "status")
-    private MaquinarioStatus status;
+    private MaquinarioStatus status; // Status atual (DISPONIVEL, EM_USO, MANUTENCAO)
 
     @Column(nullable = false)
-    private Boolean lavado;
+    private Boolean lavado;         // Indica se o maquinário está lavado
 
     @Column(nullable = false)
-    private Boolean abastecido;
+    private Boolean abastecido;     // Indica se o maquinário está abastecido
 
-    // Relacionamento OneToMany com TarefaMaquinario
-    // FetchType.LAZY para evitar carregamento ansioso desnecessário
+    // Relação com tarefas que utilizam este maquinário
     @OneToMany(mappedBy = "maquinario", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private java.util.List<TarefaMaquinario> tarefasMaquinarios;
+    private java.util.List<TarefaMaquinario> tarefasMaquinarios; // Lista de tarefas vinculadas
 }

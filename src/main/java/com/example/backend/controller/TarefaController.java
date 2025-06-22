@@ -21,10 +21,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-
-// Controlador REST para a API de tarefas, insumos e maquinários.
 @RestController
-@RequestMapping("/api/tarefas") // Mantemos o mesmo prefixo para simplificar.
+@RequestMapping("/api/tarefas")
 public class TarefaController {
 
     private final TarefaService tarefaService;
@@ -34,51 +32,44 @@ public class TarefaController {
         this.tarefaService = tarefaService;
     }
 
-    // --- Endpoints de Gerenciamento de Tarefas ---
-
-    // Endpoint para criar uma nova tarefa.
-    // Apenas ADMIN e MODERADOR podem criar tarefas.
+    // Cria uma nova tarefa. Apenas ADMIN e MODERADOR podem executar esta ação.
     @PostMapping
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR')")
     public ResponseEntity<TarefaResponse> criarTarefa(@RequestBody TarefaRequest request,
                                                       @AuthenticationPrincipal UserDetails userDetails) {
-        // O ID do atribuidor deve vir do usuário autenticado.
-        Usuario authenticatedUser = (Usuario) userDetails; // Cast para o nosso tipo Usuario customizado
+        Usuario authenticatedUser = (Usuario) userDetails;
         request.setAtribuidorId(authenticatedUser.getId());
-
         TarefaResponse novaTarefa = tarefaService.criarTarefa(request);
         return new ResponseEntity<>(novaTarefa, HttpStatus.CREATED);
     }
 
-    // Endpoint para listar todas as tarefas.
-    // Apenas ADMIN e MODERADOR podem ver todas as tarefas.
+    // Lista todas as tarefas do sistema. Acesso restrito a ADMIN e MODERADOR.
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR')")
     public ResponseEntity<List<TarefaResponse>> listarTodasTarefas() {
-        List<TarefaResponse> tarefas = tarefaService.listarTodasTarefas();
-        return ResponseEntity.ok(tarefas);
+        return ResponseEntity.ok(tarefaService.listarTodasTarefas());
     }
 
-    // Endpoint para listar as tarefas atribuídas a um usuário específico.
-    // Usuários COMUNS só podem ver suas próprias tarefas.
-    // ADMIN e MODERADOR podem ver tarefas de qualquer usuário.
+    // Lista as tarefas atribuídas a um determinado usuário.
+    // ADMIN e MODERADOR podem ver tarefas de qualquer usuário;
+    // Usuários comuns podem ver apenas suas próprias.
     @GetMapping("/atribuidas/{atributarioId}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR') or (#atributarioId == principal.id)")
     public ResponseEntity<List<TarefaResponse>> listarTarefasPorAtributario(@PathVariable Long atributarioId,
                                                                             @AuthenticationPrincipal UserDetails userDetails) {
-        List<TarefaResponse> tarefas = tarefaService.listarTarefasPorAtributario(atributarioId);
-        return ResponseEntity.ok(tarefas);
+        return ResponseEntity.ok(tarefaService.listarTarefasPorAtributario(atributarioId));
     }
 
-    // Endpoint para atualizar o status de uma tarefa.
-    // ADMIN e MODERADOR podem mudar o status de qualquer tarefa.
-    // COMUM pode mudar o status de suas próprias tarefas para CONCLUIDA ou EM_ANDAMENTO.
+    // Atualiza o status de uma tarefa.
+    // ADMIN e MODERADOR podem alterar qualquer tarefa;
+    // Usuários comuns podem apenas alterar o status de suas tarefas para EM_ANDAMENTO ou CONCLUIDA.
     @PutMapping("/{id}/status/{newStatus}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR') or (hasAuthority('COMUM') and @tarefaService.isTarefaOwner(principal.id, #id))")
     public ResponseEntity<TarefaResponse> atualizarStatusTarefa(@PathVariable Long id, @PathVariable String newStatus,
                                                                 @AuthenticationPrincipal UserDetails userDetails) {
         Usuario authenticatedUser = (Usuario) userDetails;
         StatusTarefa statusEnum;
+
         try {
             statusEnum = StatusTarefa.valueOf(newStatus.toUpperCase());
         } catch (IllegalArgumentException e) {
@@ -91,74 +82,66 @@ public class TarefaController {
             }
         }
 
-        TarefaResponse updatedTarefa = tarefaService.atualizarStatusTarefa(id, statusEnum);
-        return ResponseEntity.ok(updatedTarefa);
+        return ResponseEntity.ok(tarefaService.atualizarStatusTarefa(id, statusEnum));
     }
 
-    // Endpoint para finalizar uma tarefa (agora recebe detalhes de insumo/maquinário)
-    // Permite que usuários COMUNS ou MODERADORES finalizem suas próprias tarefas.
+    // Finaliza uma tarefa com observação, insumos entregues e maquinários devolvidos.
+    // Permitido para usuários COMUM e MODERADOR que sejam donos da tarefa.
     @PutMapping("/{id}/finalizar")
     @PreAuthorize("(hasAuthority('COMUM') or hasAuthority('MODERADOR')) and @tarefaService.isTarefaOwner(principal.id, #id)")
     public ResponseEntity<TarefaResponse> finalizarTarefa(@PathVariable Long id,
                                                           @RequestBody TarefaFinalizacaoRequest request,
                                                           @AuthenticationPrincipal UserDetails userDetails) {
-        TarefaResponse finalizedTarefa = tarefaService.finalizarTarefa(
-                id,
-                request.getObservacao(),
-                request.getInsumosEntregues(),
-                request.getMaquinariosDevolvidos()
+        return ResponseEntity.ok(
+                tarefaService.finalizarTarefa(id, request.getObservacao(), request.getInsumosEntregues(), request.getMaquinariosDevolvidos())
         );
-        return ResponseEntity.ok(finalizedTarefa);
     }
 
-    // Endpoint para listar todas as tarefas concluídas
-    // Apenas ADMIN e MODERADOR podem ver as tarefas concluídas.
+    // Lista todas as tarefas que estão com status CONCLUIDA.
+    // Apenas ADMIN e MODERADOR têm acesso.
     @GetMapping("/concluidas")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR')")
     public ResponseEntity<List<TarefaResponse>> listarTarefasConcluidas() {
-        List<TarefaResponse> tarefasConcluidas = tarefaService.listarTarefasConcluidas();
-        return ResponseEntity.ok(tarefasConcluidas);
+        return ResponseEntity.ok(tarefaService.listarTarefasConcluidas());
     }
 
-    // Endpoint para listar todos os usuários que podem receber tarefas (COMUM e MODERADOR).
-    // Apenas ADMIN e MODERADOR podem listar usuários para atribuição.
+    // Lista todos os usuários que podem receber tarefas (tipos COMUM e MODERADOR).
+    // Visível apenas para ADMIN e MODERADOR.
     @GetMapping("/usuarios-atribuiveis")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR')")
     public ResponseEntity<List<UsuarioResponseDTO>> listarUsuariosAtribuiveis() {
-        List<UsuarioResponseDTO> usuarios = tarefaService.listarUsuariosAtribuiveis();
-        return ResponseEntity.ok(usuarios);
+        return ResponseEntity.ok(tarefaService.listarUsuariosAtribuiveis());
     }
 
-    // --- Endpoints de Gerenciamento de Insumos ---
-
+    // Cria um novo insumo. Acesso restrito a ADMIN e MODERADOR.
     @PostMapping("/insumos")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR')")
     public ResponseEntity<InsumoResponse> criarInsumo(@RequestBody InsumoRequest request) {
-        InsumoResponse novoInsumo = tarefaService.criarInsumo(request);
-        return new ResponseEntity<>(novoInsumo, HttpStatus.CREATED);
+        return new ResponseEntity<>(tarefaService.criarInsumo(request), HttpStatus.CREATED);
     }
 
+    // Lista todos os insumos cadastrados. Acesso restrito a ADMIN e MODERADOR.
     @GetMapping("/insumos")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR')")
     public ResponseEntity<List<InsumoResponse>> listarTodosInsumos() {
-        List<InsumoResponse> insumos = tarefaService.listarTodosInsumos();
-        return ResponseEntity.ok(insumos);
+        return ResponseEntity.ok(tarefaService.listarTodosInsumos());
     }
 
+    // Busca um insumo específico pelo seu ID. Apenas ADMIN e MODERADOR têm acesso.
     @GetMapping("/insumos/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR')")
     public ResponseEntity<InsumoResponse> buscarInsumoPorId(@PathVariable Long id) {
-        InsumoResponse insumo = tarefaService.buscarInsumoPorId(id);
-        return ResponseEntity.ok(insumo);
+        return ResponseEntity.ok(tarefaService.buscarInsumoPorId(id));
     }
 
+    // Atualiza os dados de um insumo existente. Apenas ADMIN e MODERADOR têm acesso.
     @PutMapping("/insumos/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR')")
     public ResponseEntity<InsumoResponse> atualizarInsumo(@PathVariable Long id, @RequestBody InsumoRequest request) {
-        InsumoResponse insumoAtualizado = tarefaService.atualizarInsumo(id, request);
-        return ResponseEntity.ok(insumoAtualizado);
+        return ResponseEntity.ok(tarefaService.atualizarInsumo(id, request));
     }
 
+    // Remove um insumo pelo ID. Apenas ADMIN e MODERADOR têm acesso.
     @DeleteMapping("/insumos/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR')")
     public ResponseEntity<Void> deletarInsumo(@PathVariable Long id) {
@@ -166,36 +149,35 @@ public class TarefaController {
         return ResponseEntity.noContent().build();
     }
 
-    // --- Endpoints de Gerenciamento de Maquinários ---
-
+    // Cria um novo maquinário. Apenas ADMIN e MODERADOR têm acesso.
     @PostMapping("/maquinarios")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR')")
     public ResponseEntity<MaquinarioResponse> criarMaquinario(@RequestBody MaquinarioRequest request) {
-        MaquinarioResponse novoMaquinario = tarefaService.criarMaquinario(request);
-        return new ResponseEntity<>(novoMaquinario, HttpStatus.CREATED);
+        return new ResponseEntity<>(tarefaService.criarMaquinario(request), HttpStatus.CREATED);
     }
 
+    // Lista todos os maquinários cadastrados. Apenas ADMIN e MODERADOR têm acesso.
     @GetMapping("/maquinarios")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR')")
     public ResponseEntity<List<MaquinarioResponse>> listarTodosMaquinarios() {
-        List<MaquinarioResponse> maquinarios = tarefaService.listarTodosMaquinarios();
-        return ResponseEntity.ok(maquinarios);
+        return ResponseEntity.ok(tarefaService.listarTodosMaquinarios());
     }
 
+    // Busca um maquinário pelo ID. Apenas ADMIN e MODERADOR têm acesso.
     @GetMapping("/maquinarios/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR')")
     public ResponseEntity<MaquinarioResponse> buscarMaquinarioPorId(@PathVariable Long id) {
-        MaquinarioResponse maquinario = tarefaService.buscarMaquinarioPorId(id);
-        return ResponseEntity.ok(maquinario);
+        return ResponseEntity.ok(tarefaService.buscarMaquinarioPorId(id));
     }
 
+    // Atualiza os dados de um maquinário existente. Apenas ADMIN e MODERADOR têm acesso.
     @PutMapping("/maquinarios/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR')")
     public ResponseEntity<MaquinarioResponse> atualizarMaquinario(@PathVariable Long id, @RequestBody MaquinarioRequest request) {
-        MaquinarioResponse maquinarioAtualizado = tarefaService.atualizarMaquinario(id, request);
-        return ResponseEntity.ok(maquinarioAtualizado);
+        return ResponseEntity.ok(tarefaService.atualizarMaquinario(id, request));
     }
 
+    // Remove um maquinário do sistema. Apenas ADMIN e MODERADOR têm acesso.
     @DeleteMapping("/maquinarios/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERADOR')")
     public ResponseEntity<Void> deletarMaquinario(@PathVariable Long id) {

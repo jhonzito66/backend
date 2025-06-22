@@ -5,16 +5,18 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
+// Repositório para gerenciar a entidade Usuario no banco de dados
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
-    // Encontra um usuário pelo email.
+
+    // Busca um usuário pelo email (retorna Optional porque pode não existir)
     Optional<Usuario> findByEmail(String email);
 
-    // Verifica se um email já existe.
+    // Verifica se já existe um usuário com o email informado
     boolean existsByEmail(String email);
 
-    // Novo método para encontrar usuários por tipo (para listar comuns para atribuição)
+    // Busca usuários por tipo (exemplo: ADMIN, COMUM, MODERADOR)
     List<Usuario> findByTipoUsuario(Usuario.TipoUsuario tipoUsuario);
 
-    // NOVO MÉTODO: Para encontrar usuários por uma lista de tipos (COMUM e MODERADOR)
+    // Busca usuários cujo tipo esteja em uma lista (exemplo: COMUM e MODERADOR)
     List<Usuario> findByTipoUsuarioIn(List<Usuario.TipoUsuario> tiposUsuario);
 }

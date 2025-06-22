@@ -1,18 +1,19 @@
 package com.example.backend.dto;
 
-import com.example.backend.model.MaquinarioStatus; // Import do enum de status
+import com.example.backend.model.MaquinarioStatus; // Enum com os status possíveis
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-// DTO para requisição de Maquinario
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+// DTO usado para criar ou atualizar maquinários
+@Data // Gera getters, setters, toString, equal e hashCode
+@NoArgsConstructor // Construtor sem argumentos
+@AllArgsConstructor // Construtor com todos os campos
 public class MaquinarioRequest {
-    private String nome;
-    private String descricao;
-    private MaquinarioStatus status; // DISPONIVEL, EM_USO, MANUTENCAO
-    private Boolean lavado;
-    private Boolean abastecido;
+
+    private String nome;                // Nome do maquinário
+    private String descricao;          // Descrição do maquinário
+    private MaquinarioStatus status;   // Status: DISPONIVEL, EM_USO ou MANUTENCAO
+    private Boolean lavado;            // Indica se está lavado
+    private Boolean abastecido;        // Indica se está abastecido
 }

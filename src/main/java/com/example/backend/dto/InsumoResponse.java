@@ -15,6 +15,6 @@ public class InsumoResponse {
     private String nome;
     private String descricao;
     private String unidadeMedida;
-    private BigDecimal quantidade; // MUDANÇA: BigDecimal
+    private BigDecimal quantidade;
     private LocalDate dataValidade;
 }
