@@ -5,6 +5,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+/**
+ * Entidade que representa um Maquinário no sistema.
+ * Mapeada para a tabela 'maquinarios' no banco de dados.
+ */
 @Entity
 @Table(name = "maquinarios")
 @Data // Gera getters, setters, equals, hashCode e toString
@@ -27,12 +31,12 @@ public class Maquinario {
     private MaquinarioStatus status; // Status atual (DISPONIVEL, EM_USO, MANUTENCAO)
 
     @Column(nullable = false)
-    private Boolean lavado;         // Indica se o maquinário está lavado
+    private boolean lavado;         // **ALTERADO**: Agora é 'boolean' primitivo (não aceita null)
 
     @Column(nullable = false)
-    private Boolean abastecido;     // Indica se o maquinário está abastecido
+    private boolean abastecido;     // **ALTERADO**: Agora é 'boolean' primitivo (não aceita null)
 
     // Relação com tarefas que utilizam este maquinário
     @OneToMany(mappedBy = "maquinario", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private java.util.List<TarefaMaquinario> tarefasMaquinarios; // Lista de tarefas vinculadas
+    private java.util.List<TarefaMaquinario> tarefasMaquinarios;
 }

@@ -84,9 +84,7 @@ public class TarefaService {
      *
      * @param request O DTO contendo os dados da nova tarefa.
      * @return O DTO da tarefa criada.
-     * @throws ResponseStatusException se o atribuidor ou atributário não forem encontrados,
-     * ou se a tarefa for tentada ser atribuída a um tipo de usuário inválido,
-     * ou se a quantidade de insumo for insuficiente, ou se o maquinário não estiver disponível.
+     * @throws ResponseStatusException se houver erros de validação ou recursos insuficientes.
      */
     @Transactional
     public TarefaResponse criarTarefa(TarefaRequest request) {
@@ -159,9 +157,8 @@ public class TarefaService {
     }
 
     /**
-     * Lista todas as tarefas presentes no sistema.
-     *
-     * @return Uma lista de DTOs de todas as tarefas.
+     * Lista todas as tarefas.
+     * @return Lista de DTOs de todas as tarefas.
      */
     public List<TarefaResponse> listarTodasTarefas() {
         return tarefaRepository.findAll().stream()
@@ -170,11 +167,10 @@ public class TarefaService {
     }
 
     /**
-     * Lista as tarefas atribuídas a um usuário específico.
-     *
-     * @param atributarioId O ID do usuário atributário.
-     * @return Uma lista de DTOs das tarefas atribuídas ao usuário.
-     * @throws ResponseStatusException se o usuário atributário não for encontrado.
+     * Lista as tarefas atribuídas a um usuário.
+     * @param atributarioId ID do usuário atributário.
+     * @return Lista de DTOs das tarefas.
+     * @throws ResponseStatusException se o usuário não for encontrado.
      */
     public List<TarefaResponse> listarTarefasPorAtributario(Long atributarioId) {
         Usuario atributario = usuarioRepository.findById(atributarioId)
@@ -187,11 +183,9 @@ public class TarefaService {
 
     /**
      * Atualiza o status de uma tarefa.
-     * Se o novo status for CONCLUIDA, a data de conclusão é definida.
-     *
-     * @param tarefaId O ID da tarefa a ser atualizada.
-     * @param newStatus O novo status da tarefa.
-     * @return O DTO da tarefa atualizada.
+     * @param tarefaId ID da tarefa.
+     * @param newStatus Novo status da tarefa.
+     * @return DTO da tarefa atualizada.
      * @throws ResponseStatusException se a tarefa não for encontrada.
      */
     @Transactional
@@ -267,9 +261,10 @@ public class TarefaService {
                 tarefaMaquinarioRepository.save(tarefaMaquinario);
 
                 Maquinario maquinario = tarefaMaquinario.getMaquinario();
-                maquinario.setStatus(MaquinarioStatus.DISPONIVEL);
-                maquinario.setLavado(req.getFoiLavado());
-                maquinario.setAbastecido(req.getFoiAbastecido());
+                // Garante que os booleanos primitivos na entidade Maquinario nunca sejam null
+                maquinario.setLavado(req.getFoiLavado() != null ? req.getFoiLavado() : false);
+                maquinario.setAbastecido(req.getFoiAbastecido() != null ? req.getFoiAbastecido() : false);
+                maquinario.setStatus(MaquinarioStatus.DISPONIVEL); // Maquinário se torna disponível após finalização
                 maquinarioRepository.save(maquinario);
             }
         }
@@ -280,7 +275,6 @@ public class TarefaService {
 
     /**
      * Verifica se um usuário é o atributário (responsável) de uma tarefa específica.
-     * Utilizado para validações de segurança.
      *
      * @param userId O ID do usuário.
      * @param taskId O ID da tarefa.
@@ -540,13 +534,17 @@ public class TarefaService {
      * @return O DTO MaquinarioResponse correspondente.
      */
     private MaquinarioResponse mapToMaquinarioResponse(Maquinario maquinario) {
+        // Correção: Converte o boolean primitivo para Boolean (wrapper) se o DTO esperar,
+        // garantindo que não haja nulls ou problemas de mapeamento.
+        // Se MaquinarioResponse também usar boolean primitivo, esta conversão não é estritamente necessária,
+        // mas é defensiva.
         return new MaquinarioResponse(
                 maquinario.getId(),
                 maquinario.getNome(),
                 maquinario.getDescricao(),
                 maquinario.getStatus(),
-                maquinario.getLavado(),
-                maquinario.getAbastecido()
+                maquinario.isLavado(), // Usa o getter do primitivo boolean
+                maquinario.isAbastecido() // Usa o getter do primitivo boolean
         );
     }
 }
