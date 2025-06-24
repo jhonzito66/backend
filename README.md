@@ -2,6 +2,11 @@
 
 Bem-vindo ao repositório do **Agrotask**, um sistema completo para **gestão de tarefas em propriedades rurais**, desenvolvido para apoiar **proprietários e gerentes** no manejo eficiente de suas atividades agrícolas. A plataforma permite controle detalhado de **tarefas**, **insumos** e **maquinários**, com autenticação segura e integração entre usuários.
 
+## Participantes
+
+- João Pedro Araújo Silva Barbosa  
+- Lucas Silva Barbosa Oliveira
+
 ---
 
 ## 🚜 Visão Geral
